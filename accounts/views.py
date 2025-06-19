@@ -181,7 +181,6 @@ class UserSignUpVerifyView(APIView):
 
         email = serializer.validated_data["email"]
         otp = serializer.validated_data["otp"]
-        role = serializer.validated_data["role"]
 
         stored_otp = cache.get(f"otp_{email}")
         print("stored_otp", stored_otp, "otp", otp, end="\n")
@@ -199,7 +198,7 @@ class UserSignUpVerifyView(APIView):
                 {"error": "User already exists"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        user = CustomUser.objects.create_user(email=email, password=None, role=role)
+        user = CustomUser.objects.create_user(email=email, password=None)
         if not user:
             return Response(
                 {"message": "User creation failed"}, status=status.HTTP_400_BAD_REQUEST

@@ -9,7 +9,8 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError(_("The Email field must be set. Don't miss it"))
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        role = extra_fields.pop("role", "User")
+        user = self.model(email=email, role=role, **extra_fields)
         user.is_active = True
 
         if password:
