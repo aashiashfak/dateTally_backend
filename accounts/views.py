@@ -32,7 +32,7 @@ class UserLoginRequestAPIView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data["email"]
             cache_key = f"otp_{email}"
-            existing_otp = redis.get(cache_key, None)
+            existing_otp = redis.get(cache_key)
             try:
                 user = CustomUser.objects.get(email=email)
             except CustomUser.DoesNotExist:
