@@ -34,19 +34,21 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "date-tally-frontend.vercel.app",
-    
+    "date-tally-backend.vercel.app",
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://date-tally-frontend.vercel.app",
+    "https://date-tally-backend.vercel.app",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://date-tally-frontend.vercel.app",
+    "https://date-tally-backend.vercel.app",
 ]
 
 
