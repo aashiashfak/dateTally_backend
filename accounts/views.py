@@ -114,7 +114,7 @@ class UserLoginVerifyAPIView(APIView):
                     value=tokens["refresh"],
                     httponly=True,
                     secure=not settings.DEBUG,
-                    samesite="None",
+                    samesite="Lax" if settings.DEBUG else "None",
                     max_age=int(refresh_token_expiry.total_seconds()),
                 )
 
@@ -221,7 +221,7 @@ class UserSignUpVerifyView(APIView):
             key="refresh",
             value=tokens["refresh"],
             httponly=True,
-            secure=settings.DEBUG,
+            secure=not settings.DEBUG,
             samesite="Lax",
             max_age=int(refresh_token_expiry.total_seconds()),
         )
@@ -236,6 +236,7 @@ class CustomTokenRefreshView(TokenRefreshView):
 
     def post(self, request, *args, **kwargs):
         try:
+            print("All Cookies:", request.COOKIES) 
             refresh_token = request.COOKIES.get("refresh")
 
             if not refresh_token:
@@ -250,8 +251,8 @@ class CustomTokenRefreshView(TokenRefreshView):
             return super().post(request, *args, **kwargs)
 
         except Exception as e:
-            error_details = traceback.format_exc()  # Get full error traceback
-            print("Exception in Token Refresh:", error_details)  # Log error
+            error_details = traceback.format_exc()  
+            print("Exception in Token Refresh:", error_details)  
 
             return Response(
                 {"error": str(e), "details": error_details},
