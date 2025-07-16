@@ -14,11 +14,6 @@ from decouple import config
 from rest_framework_simplejwt.views import TokenRefreshView
 import traceback
 
-redis = Redis(
-    url="https://driving-escargot-50572.upstash.io",
-    token=config("REDIS_TOKEN"),
-)
-
 
 class UserLoginRequestAPIView(APIView):
     """
@@ -28,25 +23,34 @@ class UserLoginRequestAPIView(APIView):
     """
 
     def post(self, request):
+        print("entered in request veiw")
         serializer = UserAuthSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
             cache_key = f"otp_{email}"
-            existing_otp = redis.get(cache_key)
+            try:
+                otp = cache.get(cache_key)
+                print("try to get otp", otp)
+            except Exception as e:
+                print(" Error accessing Redis:", e)
+                return Response(
+                    {"error": f"Redis connection failed: {str(e)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
             try:
                 user = CustomUser.objects.get(email=email)
             except CustomUser.DoesNotExist:
-                redis.delete(cache_key)
+                cache.delete(cache_key)
                 return Response(
                     {"error": "User does not exist. pls signUp"},
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            if not existing_otp:
+            if not otp:
                 otp = generate_otp()
-                redis.set(cache_key, otp, ex=120)
-            else:
-                otp = existing_otp
+                cache.set(cache_key, otp, timeout=120)
+
             username = email.split("@")[0]
 
             print("generated_otp", otp)
@@ -56,9 +60,9 @@ class UserLoginRequestAPIView(APIView):
                     {"message": "OTP sent successfully."}, status=status.HTTP_200_OK
                 )
             except Exception as e:
-                redis.delete(cache_key)
+                cache.delete(cache_key)
                 return Response(
-                    {"error": "Failed to send OTP. Please try again later."},
+                    {"error": f"Failed to send OTP. Please try again later. {e}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -78,20 +82,20 @@ class UserLoginVerifyAPIView(APIView):
             email = serializer.validated_data["email"]
             otp = serializer.validated_data["otp"]
 
-            stored_otp = redis.get(f"otp_{email}")
+            stored_otp = cache.get(f"otp_{email}")
             print(stored_otp)
 
             if stored_otp == otp:
                 try:
                     user = CustomUser.objects.get(email=email)
                 except CustomUser.DoesNotExist:
-                    redis.delete(f"otp_{email}")
+                    cache.delete(f"otp_{email}")
                     return Response(
                         {"error": "User does not exist."},
                         status=status.HTTP_404_NOT_FOUND,
                     )
 
-                redis.delete(f"otp_{email}")
+                cache.delete(f"otp_{email}")
 
                 tokens = user.tokens
                 user_serializer = UserSerializer(user)
