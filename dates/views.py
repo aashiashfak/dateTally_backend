@@ -11,14 +11,12 @@ class DateEntryCreateAPIView(APIView):
     def post(self, request):
         serializer = DateEntrySerializer(data=request.data)
         if not serializer.is_valid():
-            print("hai-----------------------------------")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Safe to access validated_data now
         user = request.user
         date = serializer.validated_data["date"]
         count = serializer.validated_data["count"]
-        print("user-date-count-------------------------------", date, count)
+        print(f"user-date-:{date} , count-: {count}")
 
         obj = Dates.objects.filter(user=user, date=date).first()
 
@@ -57,6 +55,7 @@ class StoredDatesListAPIView(APIView):
     """
     List all stored dates for the authenticated user according to perticular year and month.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -75,7 +74,9 @@ class StoredDatesListAPIView(APIView):
             return Response({"error": "year and month must be integers."}, status=400)
 
         # Query DB for matching dates
-        dates_qs = Dates.objects.filter(user=user, date__year=year, date__month=month)
+        dates_qs = Dates.objects.filter(
+            user=user, date__year=year, date__month=month
+        ).select_related("user")
 
         # Build response
         result = [
