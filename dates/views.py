@@ -76,7 +76,7 @@ class StoredDatesListAPIView(APIView):
         # Query DB for matching dates
         dates_qs = Dates.objects.filter(
             user=user, date__year=year, date__month=month
-        ).select_related("user")
+        ).only("date", "count")
 
         # Build response
         result = [
